@@ -20,31 +20,15 @@
       "metadata": {
         "description": "Password for the Virtual Machine."
       }
-    },
-    "BEdnsLabelPrefix": {
-      "type": "string",
-      "metadata": {
-        "description": "Unique DNS Name for the Public IP used to access the Virtual Machine."
-      }
-    },
-    "FEdnsLabelPrefix": {
-      "type": "string",
-      "metadata": {
-        "description": "Unique DNS Name for the Public IP used to access the Virtual Machine."
-      }
     }
   },
   "variables": {
     "BEnicName": "myBEVMNic",
     "FEnicName": "myFEVMNic",
-    "addressPrefix": "10.0.0.0/16",
-    "subnetPrefix": "10.0.0.0/24",
-    "BEpublicIpAddressName": "myBEPublicIP",
-    "FEpublicIpAddressName": "myFEPublicIP",
     "BEvmName": "WinWithDD",
     "FEvmName": "WinSimple",
-    "subnetName": "[concat(variables('virtualNetworkName'), 'Subnet')]",
-    "virtualNetworkName": "[concat('Dtl', parameters('newLabName'))]",
+    "subnetName": "EBS-3PI_DEV-TEST-Subnet-01",
+    "virtualNetworkName": "EBS-3PI_DEV-TEST_VNET",
     "vnetID": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/doedemoRG207859/providers/Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]",
     "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",
     "BEosDiskVhdUri": "https://doedemorg207859disks594.blob.core.windows.net/vhds/VanillaImage20170813213812.vhd",
@@ -104,45 +88,15 @@
     },
     {
       "apiVersion": "2016-03-30",
-      "type": "Microsoft.Network/publicIPAddresses",
-      "name": "[variables('BEpublicIpAddressName')]",
-      "location": "[resourceGroup().location]",
-      "properties": {
-        "publicIPAllocationMethod": "Dynamic",
-        "dnsSettings": {
-          "domainNameLabel": "[parameters('BEdnsLabelPrefix')]"
-        }
-      }
-    },
-    {
-      "apiVersion": "2016-03-30",
-      "type": "Microsoft.Network/publicIPAddresses",
-      "name": "[variables('FEpublicIpAddressName')]",
-      "location": "[resourceGroup().location]",
-      "properties": {
-        "publicIPAllocationMethod": "Dynamic",
-        "dnsSettings": {
-          "domainNameLabel": "[parameters('FEdnsLabelPrefix')]"
-        }
-      }
-    },
-    {
-      "apiVersion": "2016-03-30",
       "type": "Microsoft.Network/networkInterfaces",
       "name": "[variables('BEnicName')]",
       "location": "[resourceGroup().location]",
-      "dependsOn": [
-        "[concat('Microsoft.Network/publicIPAddresses/', variables('BEpublicIpAddressName'))]"
-      ],
       "properties": {
         "ipConfigurations": [
           {
             "name": "ipconfig1",
             "properties": {
               "privateIPAllocationMethod": "Dynamic",
-              "publicIPAddress": {
-                "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('BEpublicIpAddressName'))]"
-              },
               "subnet": {
                 "id": "[variables('subnetRef')]"
               }
@@ -156,18 +110,12 @@
       "type": "Microsoft.Network/networkInterfaces",
       "name": "[variables('FEnicName')]",
       "location": "[resourceGroup().location]",
-      "dependsOn": [
-        "[concat('Microsoft.Network/publicIPAddresses/', variables('FEpublicIpAddressName'))]"
-      ],
       "properties": {
         "ipConfigurations": [
           {
             "name": "ipconfig2",
             "properties": {
               "privateIPAllocationMethod": "Dynamic",
-              "publicIPAddress": {
-                "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('FEpublicIpAddressName'))]"
-              },
               "subnet": {
                 "id": "[variables('subnetRef')]"
               }
