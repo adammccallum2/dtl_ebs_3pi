@@ -1,0 +1,122 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "newLabName": {
+      "type": "string",
+      "defaultValue": "doedemo",
+      "metadata": {
+        "description": "The name of the new lab instance to be created."
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "Username for the Virtual Machine."
+      }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Password for the Virtual Machine."
+      }
+    }
+  },
+  "variables": {
+    "BEnicName": "myBEVMNic",
+    "BEvmName": "WinWithDD",
+    "subnetName": "EBS-3PI_DEV-TEST-Subnet-01",
+    "virtualNetworkName": "EBS-3PI_DEV-TEST_VNET",
+    "vnetID": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/EBS-3PI_Sprint20170815RG240102/providers/Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]",
+    "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",
+    "BEosDiskVhdUri": "https://ebs3pivhdtemplates.blob.core.windows.net/vhds/VanillaImage20170813213812.vhd",
+    "BEdataDiskVhdUri1": "https://ebs3pivhdtemplates.blob.core.windows.net/vhds/VanillaImage-20170813-214650.vhd",
+    "BEdataDiskVhdUri2": "https://ebs3pivhdtemplates.blob.core.windows.net/vhds/VanillaImage-20170813-214706.vhd",
+    "BEimageName": "WinWith2DataDisks",
+    "scriptParameters": "-var1 smarter -var2 weird"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Compute/images",
+      "apiVersion": "2016-04-30-preview",
+      "name": "[variables('BEimageName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "storageProfile": {
+          "osDisk": {
+            "osType": "Windows",
+            "osState": "Generalized",
+            "blobUri": "[variables('BEosDiskVhdUri')]",
+            "storageAccountType": "Standard_LRS"
+          },
+          "dataDisks": [
+            {
+              "lun": 0,
+              "blobUri": "[variables('BEdataDiskVhdUri1')]",
+              "storageAccountType": "Standard_LRS",
+              "caching": "ReadOnly"
+            },
+            {
+              "lun": 1,
+              "blobUri": "[variables('BEdataDiskVhdUri2')]",
+              "storageAccountType": "Standard_LRS",
+              "caching": "ReadOnly"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "apiVersion": "2016-03-30",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[variables('BEnicName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('subnetRef')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2017-03-30",
+      "type": "Microsoft.Compute/virtualMachines",
+      "name": "[variables('BEvmName')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces/', variables('BEnicName'))]",
+        "[resourceId('Microsoft.Compute/images/', variables('BEimageName'))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_A2"
+        },
+        "osProfile": {
+          "computerName": "[variables('BEvmName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "id": "[resourceId('Microsoft.Compute/images', variables('BEimageName'))]"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('BEnicName'))]"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}
